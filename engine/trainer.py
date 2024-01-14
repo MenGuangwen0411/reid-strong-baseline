@@ -17,6 +17,7 @@ from utils.reid_metric import R1_mAP
 global ITER
 ITER = 0
 
+
 def create_supervised_trainer(model, optimizer, loss_fn,
                               device=None):
     """
@@ -54,8 +55,9 @@ def create_supervised_trainer(model, optimizer, loss_fn,
     return Engine(_update)
 
 
-def create_supervised_trainer_with_center(model, center_criterion, optimizer, optimizer_center, loss_fn, cetner_loss_weight,
-                              device=None):
+def create_supervised_trainer_with_center(model, center_criterion, optimizer, optimizer_center, loss_fn,
+                                          cetner_loss_weight,
+                                          device=None):
     """
     Factory function for creating a trainer for supervised models
 
@@ -152,8 +154,18 @@ def do_train(
     logger = logging.getLogger("reid_baseline.train")
     logger.info("Start training")
     trainer = create_supervised_trainer(model, optimizer, loss_fn, device=device)
-    evaluator = create_supervised_evaluator(model, metrics={'r1_mAP': R1_mAP(num_query, max_rank=50, feat_norm=cfg.TEST.FEAT_NORM)}, device=device)
+    evaluator = create_supervised_evaluator(model, metrics={
+        'r1_mAP': R1_mAP(num_query, max_rank=50, feat_norm=cfg.TEST.FEAT_NORM)}, device=device)
+    checkpoint_period = None
     checkpointer = ModelCheckpoint(output_dir, cfg.MODEL.NAME, checkpoint_period, n_saved=10, require_empty=False)
+    # (self, dirname, filename_prefix,
+    #  save_interval=None,
+    #  score_function=None, score_name=None,
+    #  n_saved=1,
+    #  atomic=True, require_empty=True,
+    #  create_dir=True,
+    #  save_as_state_dict=True, global_step_transform=None, archived=False):
+
     timer = Timer(average=True)
 
     trainer.add_event_handler(Events.EPOCH_COMPLETED, checkpointer, {'model': model,
@@ -169,7 +181,8 @@ def do_train(
     def start_training(engine):
         engine.state.epoch = start_epoch
 
-    @trainer.on(Events.EPOCH_STARTED)
+    # @trainer.on(Events.EPOCH_STARTED)
+    @trainer.on(Events.EPOCH_COMPLETED)
     def adjust_learning_rate(engine):
         scheduler.step()
 
@@ -230,8 +243,10 @@ def do_train_with_center(
 
     logger = logging.getLogger("reid_baseline.train")
     logger.info("Start training")
-    trainer = create_supervised_trainer_with_center(model, center_criterion, optimizer, optimizer_center, loss_fn, cfg.SOLVER.CENTER_LOSS_WEIGHT, device=device)
-    evaluator = create_supervised_evaluator(model, metrics={'r1_mAP': R1_mAP(num_query, max_rank=50, feat_norm=cfg.TEST.FEAT_NORM)}, device=device)
+    trainer = create_supervised_trainer_with_center(model, center_criterion, optimizer, optimizer_center, loss_fn,
+                                                    cfg.SOLVER.CENTER_LOSS_WEIGHT, device=device)
+    evaluator = create_supervised_evaluator(model, metrics={
+        'r1_mAP': R1_mAP(num_query, max_rank=50, feat_norm=cfg.TEST.FEAT_NORM)}, device=device)
     checkpointer = ModelCheckpoint(output_dir, cfg.MODEL.NAME, checkpoint_period, n_saved=10, require_empty=False)
     timer = Timer(average=True)
 
