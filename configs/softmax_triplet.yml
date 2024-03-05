@@ -1,6 +1,6 @@
 MODEL:
   PRETRAIN_CHOICE: 'imagenet'
-  PRETRAIN_PATH: 'F:\python_workspcae\pre_trained_model/resnet50-19c8e357.pth'
+  PRETRAIN_PATH: 'E:\python_workspcae\pre_trained_model/resnet50-19c8e357.pth'
   METRIC_LOSS_TYPE: 'triplet'
   IF_LABELSMOOTH: 'on'
   IF_WITH_CENTER: 'no'
